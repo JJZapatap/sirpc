@@ -51,35 +51,35 @@ document.getElementById("btnFiltrar").onclick = cargar;
 document.getElementById("fTexto").addEventListener("keydown", e => { if(e.key === "Enter") cargar(); });
 window.addEventListener("load", cargar);
 async function cargar(){
-  notify("#msg","info","Cargando citas de revisión...");
+  notify("#msg","info","Cargando revisiones programadas...");
   try{
-    const resp = await api("listarCitas", {
+    const resp = await api("listarRevisiones", {
       fecha: document.getElementById("fFecha").value,
       tipoRevision: document.getElementById("fTipo").value,
       estadoCita: document.getElementById("fEstado").value,
       texto: document.getElementById("fTexto").value
     });
-    ROWS = resp.citas || [];
+    ROWS = resp.revisiones || [];
     renderTabla(ROWS);
-    notify("#msg","ok",`Registros cargados: ${ROWS.length}`);
+    notify("#msg","ok",`Revisiones cargadas: ${ROWS.length}`);
   }catch(err){ notify("#msg","err",err.message); }
 }
 function renderTabla(rows){
   const headers = ["FechaCita","HoraCita","TipoRevision","RevisorAsignado","EstadoCita","EstadoRevision","Nombre_Completo","Descripción","Nº Clase","NumeroReserva"];
   document.querySelector("#tabla thead").innerHTML = `<tr>${headers.map(h=>`<th>${escapeHtml(h)}</th>`).join("")}<th>Acción</th></tr>`;
-  document.querySelector("#tabla tbody").innerHTML = rows.map(r => `<tr>${headers.map(h => {
+  document.querySelector("#tabla tbody").innerHTML = rows.map((r,idx) => `<tr>${headers.map(h => {
     let v = r[h] || "";
     if(h === "EstadoCita" || h === "EstadoRevision") return `<td>${estadoPill(v)}</td>`;
     return `<td>${escapeHtml(v)}</td>`;
-  }).join("")}<td><button class="btn green sm" data-reserva="${escapeHtml(r.NumeroReserva)}">Registrar resultado</button></td></tr>`).join("") || `<tr><td colspan="${headers.length+1}">No hay citas con los filtros seleccionados.</td></tr>`;
-  document.querySelectorAll("[data-reserva]").forEach(b => b.onclick = () => abrirResultado(b.dataset.reserva));
+  }).join("")}<td><button class="btn green sm" data-row="${idx}">Registrar resultado</button></td></tr>`).join("") || `<tr><td colspan="${headers.length+1}">No hay revisiones con los filtros seleccionados.</td></tr>`;
+  document.querySelectorAll("[data-row]").forEach(b => b.onclick = () => abrirResultado(Number(b.dataset.row)));
 }
-function abrirResultado(numero){
-  const r = ROWS.find(x => x.NumeroReserva === numero);
+function abrirResultado(index){
+  const r = ROWS[index];
   if(!r) return;
   document.getElementById("modalRoot").innerHTML = `<div class="modal-back"><div class="modal">
-    <div class="title">📝 Registrar resultado</div>
-    <p class="subtitle"><b>${escapeHtml(r.Nombre_Completo)}</b><br>${escapeHtml(r.Descripción)} · ${escapeHtml(r.TipoRevision)} · Reserva ${escapeHtml(numero)}</p>
+    <div class="title">📝 Registrar resultado ${escapeHtml(r.TipoRevision)}</div>
+    <p class="subtitle"><b>${escapeHtml(r.Nombre_Completo)}</b><br>${escapeHtml(r.Descripción)} · ${escapeHtml(r.TipoRevision)} · Reserva integral ${escapeHtml(r.NumeroReserva)}</p>
     <div id="resMsg"></div>
     <div class="grid g2">
       <div><label>Resultado</label><select id="estadoRevision"><option>VISADO</option><option>CON OBSERVACIONES</option><option>NO ASISTIÓ</option></select></div>
@@ -88,12 +88,21 @@ function abrirResultado(numero){
     <div class="mt"><label>Observaciones</label><textarea id="obs" placeholder="Registre observaciones si aplica"></textarea></div>
     <div class="btnrow mt"><button id="btnGuardar" class="btn green">Guardar resultado</button><button id="btnCerrar" class="btn ghost">Cerrar</button></div>
   </div></div>`;
+  document.getElementById("estadoRevision").value = ["VISADO","CON OBSERVACIONES","NO ASISTIÓ"].includes(String(r.EstadoRevision || "").toUpperCase()) ? r.EstadoRevision : "VISADO";
+  document.getElementById("obs").value = r.ObservacionesRevisor || "";
+  document.getElementById("usuarioRevision").value = r.RevisorAsignado || "";
   document.getElementById("btnCerrar").onclick = cerrar;
   document.getElementById("btnGuardar").onclick = async () => {
     const btn = document.getElementById("btnGuardar");
     btn.disabled = true; btn.textContent = "Guardando...";
     try{
-      await api("marcarRevision", {numeroReserva:numero, estadoRevision:document.getElementById("estadoRevision").value, observaciones:document.getElementById("obs").value, usuario:document.getElementById("usuarioRevision").value});
+      await api("marcarRevision", {
+        numeroReserva:r.NumeroReserva,
+        tipoRevision:r.TipoRevision,
+        estadoRevision:document.getElementById("estadoRevision").value,
+        observaciones:document.getElementById("obs").value,
+        usuario:document.getElementById("usuarioRevision").value
+      });
       notify("#resMsg","ok","Resultado guardado correctamente.");
       setTimeout(()=>{ cerrar(); cargar(); }, 700);
     }catch(err){ notify("#resMsg","err",err.message); btn.disabled = false; btn.textContent = "Guardar resultado"; }

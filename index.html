@@ -12,7 +12,7 @@
   <div class="wrap narrow">
     <header class="topbar">
       <div class="toprow">
-        <img class="brand-logo" src="assets/logo-ucc.png" alt="UCC SIRPC">
+        <img class="brand-logo" src="assets/logo-ucc.svg" alt="UCC SIRPC">
         <div class="brand-text">
           <h1>SIRPC · Revisión de Planes de Curso</h1>
           <p>Sistema de Información para la Revisión de Planes de Curso</p>
@@ -52,6 +52,7 @@
 
 <script>
 const {api, notify, escapeHtml, estadoPill, fmtDateLong, fmtShortDate} = window.SIRPC;
+const TIPOS = ["SIB","APA","Rizoma"];
 const REVISORES = {
   "SIB": "Marisorelis Carrillo Cantillo",
   "APA": "Emilio Alfonso Lara",
@@ -97,29 +98,47 @@ function renderDocente(docente, total){
       <div><label>Documento</label><div class="inp">${escapeHtml(docente.documento)}</div></div>
       <div><label>Correo</label><div class="inp">${escapeHtml(docente.correo)}</div></div>
     </div>
-    <p class="small muted mt">Planes encontrados: <b>${total}</b>. Cada plan debe pasar por SIB, APA y Rizoma.</p>`;
+    <p class="small muted mt">Planes encontrados: <b>${total}</b>. Cada plan se agenda en una sola cita integral para revisión conjunta de SIB, APA y Rizoma.</p>`;
 }
 
 function renderPlanes(planes){
   const box = document.getElementById("planesBox");
   box.classList.remove("hidden");
-  box.innerHTML = `<div class="card"><div class="title">📚 Planes de curso asignados</div><div id="plansList"></div></div>`;
+  box.innerHTML = `<div class="card"><div class="title">📚 Planes de curso asignados</div><div class="notice info">Cada plan requiere una sola reserva. En el horario seleccionado revisan simultáneamente SIB, APA y Rizoma.</div><div id="plansList"></div></div>`;
   const list = document.getElementById("plansList");
   list.innerHTML = planes.map(planCard).join("");
   list.querySelectorAll("[data-agendar]").forEach(btn => btn.addEventListener("click",()=>{
     const idPlan = btn.dataset.idplan;
-    const tipo = btn.dataset.tipo;
     const plan = DATA.planes.find(p => p.IDPlan === idPlan);
-    abrirAgenda(plan, tipo);
+    abrirAgenda(plan);
   }));
   list.querySelectorAll("[data-cancelar]").forEach(btn => btn.addEventListener("click",()=>{
-    cancelar(btn.dataset.reserva, btn.dataset.idplan, btn.dataset.tipo);
+    cancelar(btn.dataset.reserva, btn.dataset.idplan);
   }));
 }
 
 function planCard(p){
-  const revs = ["SIB","APA","Rizoma"].map(t => revCard(p, t)).join("");
-  const visadas = ["SIB","APA","Rizoma"].filter(t => (p.revisiones[t]?.estado || "").toUpperCase() === "VISADO").length;
+  const revs = TIPOS.map(t => revStatusCard(p, t)).join("");
+  const active = p.reservaActiva || getActiveFromRevs(p);
+  const estado = String(p.estadoIntegral || estadoIntegralLocal(p, active)).toUpperCase();
+  const allVisado = estado === "COMPLETAMENTE VISADO";
+  let action = "";
+  if(active){
+    action = `<div class="integral-action reserved">
+      <div><b>📌 Cita integral reservada</b><br>
+      ${fmtShortDate(active.FechaCita)} · ${escapeHtml(active.HoraCita)} - ${escapeHtml(active.HoraFin || "")} · ${escapeHtml(active.Jornada)}<br>
+      <span class="small">Reserva: ${escapeHtml(active.NumeroReserva)}</span></div>
+      <button class="btn danger sm" data-cancelar="1" data-reserva="${escapeHtml(active.NumeroReserva)}" data-idplan="${escapeHtml(p.IDPlan)}">Cancelar cita integral</button>
+    </div>`;
+  }else if(allVisado){
+    action = `<div class="integral-action ok"><b>✅ Plan completamente visado</b><br><span class="small">SIB, APA y Rizoma ya registraron VISADO.</span></div>`;
+  }else{
+    action = `<div class="integral-action">
+      <div><b>🗓️ Agendamiento integral pendiente</b><br><span class="small">Una sola cita para revisión conjunta con SIB, APA y Rizoma.</span></div>
+      <button class="btn sm" data-agendar="1" data-idplan="${escapeHtml(p.IDPlan)}">Agendar cita integral</button>
+    </div>`;
+  }
+
   return `<article class="plan-card">
     <div class="plan-head">
       <div>
@@ -129,41 +148,49 @@ function planCard(p){
           <b>Programa/Grupo:</b> ${escapeHtml(p["Gp Acad"] || "")} · <b>Org Acad:</b> ${escapeHtml(p["Org Acad"] || "")} · <b>Modo:</b> ${escapeHtml(p["Modo Enseñanza"] || "")}
         </div>
       </div>
-      <div>${estadoPill(visadas === 3 ? "COMPLETAMENTE VISADO" : "EN PROCESO")}</div>
+      <div>${estadoPill(estado)}</div>
     </div>
-    <div class="rev-grid">${revs}</div>
+    <div class="rev-grid compact">${revs}</div>
+    ${action}
   </article>`;
 }
 
-function revCard(p, tipo){
+function revStatusCard(p, tipo){
   const r = p.revisiones[tipo] || {estado:"PENDIENTE"};
   const estado = String(r.estado || "PENDIENTE").toUpperCase();
-  const cita = r.cita;
-  let action = "";
-  if(estado === "VISADO"){
-    action = `<p><b>Fecha visado:</b> ${escapeHtml(r.fechaVisado || "")}</p>`;
-  }else if(cita && ["RESERVADA","ACTIVA","CONFIRMADA"].includes(String(cita.EstadoCita || "").toUpperCase())){
-    action = `<p><b>Cita:</b> ${fmtShortDate(cita.FechaCita)} · ${escapeHtml(cita.HoraCita)} · ${escapeHtml(cita.Jornada)}</p>
-      <p><b>Reserva:</b> ${escapeHtml(cita.NumeroReserva)}</p>
-      <button class="btn danger sm mt" data-cancelar="1" data-reserva="${escapeHtml(cita.NumeroReserva)}" data-idplan="${escapeHtml(p.IDPlan)}" data-tipo="${escapeHtml(tipo)}">Cancelar esta cita</button>`;
-  }else{
-    action = `<button class="btn sm mt" data-agendar="1" data-idplan="${escapeHtml(p.IDPlan)}" data-tipo="${escapeHtml(tipo)}">Agendar revisión ${escapeHtml(tipo)}</button>`;
-  }
-  return `<div class="rev-card">
+  return `<div class="rev-card status-only">
     <h3>${escapeHtml(tipo)}</h3>
     <p><b>Revisor:</b> ${escapeHtml(REVISORES[tipo] || r.revisor || "")}</p>
     <p>${estadoPill(estado)}</p>
-    ${r.observaciones ? `<p><b>Obs:</b> ${escapeHtml(r.observaciones)}</p>` : ""}
-    ${action}
+    ${r.fechaVisado ? `<p class="small"><b>Fecha:</b> ${escapeHtml(r.fechaVisado)}</p>` : ""}
+    ${r.observaciones ? `<p class="small"><b>Obs:</b> ${escapeHtml(r.observaciones)}</p>` : ""}
   </div>`;
 }
 
-async function abrirAgenda(plan, tipo){
+function getActiveFromRevs(p){
+  for(const t of TIPOS){
+    const c = p.revisiones && p.revisiones[t] && p.revisiones[t].cita;
+    if(c) return c;
+  }
+  return null;
+}
+
+function estadoIntegralLocal(p, active){
+  if(active) return "CITA RESERVADA";
+  const estados = TIPOS.map(t => String((p.revisiones?.[t]?.estado) || "PENDIENTE").toUpperCase());
+  if(estados.every(e => e === "VISADO")) return "COMPLETAMENTE VISADO";
+  if(estados.some(e => e === "CON OBSERVACIONES")) return "CON OBSERVACIONES";
+  if(estados.some(e => e === "NO ASISTIÓ" || e === "NO ASISTIO")) return "NO ASISTIÓ";
+  if(estados.some(e => e !== "PENDIENTE")) return "EN PROCESO";
+  return "PENDIENTE";
+}
+
+async function abrirAgenda(plan){
   selectedSlot = null;
   const modal = document.getElementById("modalRoot");
   modal.innerHTML = `<div class="modal-back"><div class="modal">
-    <div class="title">🗓️ Agendar revisión ${escapeHtml(tipo)}</div>
-    <p class="subtitle"><b>${escapeHtml(plan.Descripción)}</b><br>IDPlan: ${escapeHtml(plan.IDPlan)} · Revisor: ${escapeHtml(REVISORES[tipo])}</p>
+    <div class="title">🗓️ Agendar cita integral</div>
+    <p class="subtitle"><b>${escapeHtml(plan.Descripción)}</b><br>IDPlan: ${escapeHtml(plan.IDPlan)}<br>Revisión conjunta: SIB, APA y Rizoma.</p>
     <div id="agendaMsg"></div>
     <div class="grid g2 mb">
       <div><label>Fecha disponible</label><select id="fechaSel"><option value="">Cargando fechas...</option></select></div>
@@ -171,28 +198,28 @@ async function abrirAgenda(plan, tipo){
     </div>
     <div id="slotsBox" class="slots"></div>
     <div class="btnrow mt">
-      <button id="btnConfirmar" class="btn green" disabled>Confirmar cita</button>
+      <button id="btnConfirmar" class="btn green" disabled>Confirmar cita integral</button>
       <button id="btnCerrar" class="btn ghost">Cerrar</button>
     </div>
   </div></div>`;
   document.getElementById("btnCerrar").onclick = cerrarModal;
-  document.getElementById("btnConfirmar").onclick = () => confirmarReserva(plan, tipo);
-  document.getElementById("fechaSel").onchange = () => cargarSlots(tipo);
-  document.getElementById("jornadaSel").onchange = () => cargarSlots(tipo);
+  document.getElementById("btnConfirmar").onclick = () => confirmarReserva(plan);
+  document.getElementById("fechaSel").onchange = cargarSlots;
+  document.getElementById("jornadaSel").onchange = cargarSlots;
   try{
-    const resp = await api("getFechasDisponibles", {tipoRevision:tipo});
+    const resp = await api("getFechasDisponibles", {});
     const fechas = resp.fechas || [];
     const fechaSel = document.getElementById("fechaSel");
     if(!fechas.length){
       fechaSel.innerHTML = `<option value="">Sin fechas disponibles</option>`;
-      notify("#agendaMsg","warn","No hay horarios disponibles para esta revisión.");
+      notify("#agendaMsg","warn","No hay horarios disponibles.");
       return;
     }
     fechaSel.innerHTML = `<option value="">Seleccione fecha</option>` + fechas.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(fmtDateLong(f))}</option>`).join("");
   }catch(err){ notify("#agendaMsg","err",err.message); }
 }
 
-async function cargarSlots(tipo){
+async function cargarSlots(){
   selectedSlot = null;
   document.getElementById("btnConfirmar").disabled = true;
   const fecha = document.getElementById("fechaSel").value;
@@ -201,12 +228,12 @@ async function cargarSlots(tipo){
   if(!fecha){ box.innerHTML = ""; return; }
   box.innerHTML = `<div class="notice info">Cargando horarios...</div>`;
   try{
-    const resp = await api("getDisponibilidad", {tipoRevision:tipo, fecha, jornada});
+    const resp = await api("getDisponibilidad", {fecha, jornada});
     const slots = resp.slots || [];
     if(!slots.length){ box.innerHTML = `<div class="notice warn">No hay cupos disponibles para esta fecha/jornada.</div>`; return; }
     box.innerHTML = slots.map(s => `<button class="slot" data-id="${escapeHtml(s.IDHorario)}">
       <strong>${escapeHtml(s.HoraInicio)} - ${escapeHtml(s.HoraFin)}</strong>
-      <span>${escapeHtml(s.Jornada)} · ${escapeHtml(s.Revisor)}</span>
+      <span>${escapeHtml(s.Jornada)} · SIB + APA + Rizoma</span>
       <div class="quota">Quedan ${s.CuposRestantes}/${s.Cupos} cupos</div>
     </button>`).join("");
     box.querySelectorAll(".slot").forEach(el => el.onclick = () => {
@@ -218,23 +245,23 @@ async function cargarSlots(tipo){
   }catch(err){ box.innerHTML = `<div class="notice err">${escapeHtml(err.message)}</div>`; }
 }
 
-async function confirmarReserva(plan, tipo){
+async function confirmarReserva(plan){
   if(!selectedSlot){ notify("#agendaMsg","warn","Seleccione un horario."); return; }
   const btn = document.getElementById("btnConfirmar");
   btn.disabled = true; btn.textContent = "Guardando...";
   try{
-    const resp = await api("reservarCita", {idPlan:plan.IDPlan, tipoRevision:tipo, idHorario:selectedSlot.IDHorario});
-    notify("#agendaMsg","ok",`Cita reservada correctamente. Número de reserva: ${resp.numeroReserva}`);
+    const resp = await api("reservarCita", {idPlan:plan.IDPlan, idHorario:selectedSlot.IDHorario});
+    notify("#agendaMsg","ok",`Cita integral reservada correctamente. Número de reserva: ${resp.numeroReserva}`);
     setTimeout(()=>{ cerrarModal(); buscar(); }, 900);
-  }catch(err){ notify("#agendaMsg","err",err.message); btn.disabled = false; btn.textContent = "Confirmar cita"; }
+  }catch(err){ notify("#agendaMsg","err",err.message); btn.disabled = false; btn.textContent = "Confirmar cita integral"; }
 }
 
-async function cancelar(numeroReserva, idPlan, tipo){
+async function cancelar(numeroReserva, idPlan){
   const motivo = prompt("Motivo de cancelación (opcional):", "");
   if(motivo === null) return;
   try{
-    await api("cancelarCita", {numeroReserva, idPlan, tipoRevision:tipo, motivo, q:qdoc.value.trim()});
-    notify("#msg","ok","La cita fue cancelada y el cupo quedó disponible nuevamente.");
+    await api("cancelarCita", {numeroReserva, idPlan, motivo, q:qdoc.value.trim()});
+    notify("#msg","ok","La cita integral fue cancelada y el cupo quedó disponible nuevamente.");
     buscar();
   }catch(err){ notify("#msg","err",err.message); }
 }
