@@ -16,7 +16,7 @@
 
   function getApiUrl(){
     const url = String(API_URL || "").trim();
-    if(!url || url.includes("https://script.google.com/macros/s/AKfycbwB_ZdcvgqEwS7pE_Htua82OJ9e1_CGbzquSczCTYvsj-onnrXaVCnuAi473147brcY/exec") || url.includes("https://script.google.com/macros/s/AKfycbwB_ZdcvgqEwS7pE_Htua82OJ9e1_CGbzquSczCTYvsj-onnrXaVCnuAi473147brcY/exec") || !url.endsWith("/exec")){
+    if(!url || url.includes("https://script.google.com/macros/s/AKfycbzn4E5GTj31bwhcv0bak1J83uPLfrHvlX6YEAT4aMbcQzoQ1GZYVBsvrhffDc2qyS2r/exec") || url.includes("https://script.google.com/macros/s/AKfycbzn4E5GTj31bwhcv0bak1J83uPLfrHvlX6YEAT4aMbcQzoQ1GZYVBsvrhffDc2qyS2r/exec") || !url.endsWith("/exec")){
       throw new Error("Falta configurar la URL /exec de Google Apps Script en config.js");
     }
     return url;
