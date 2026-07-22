@@ -16,7 +16,7 @@
 
   function getApiUrl(){
     const url = String(API_URL || "").trim();
-    if(!url || url.includes("PEGUE_AQUI") || url.includes("TU_ID_DE_APPS_SCRIPT") || !url.endsWith("/exec")){
+    if(!url || url.includes("https://script.google.com/macros/s/AKfycbwB_ZdcvgqEwS7pE_Htua82OJ9e1_CGbzquSczCTYvsj-onnrXaVCnuAi473147brcY/exec") || url.includes("https://script.google.com/macros/s/AKfycbwB_ZdcvgqEwS7pE_Htua82OJ9e1_CGbzquSczCTYvsj-onnrXaVCnuAi473147brcY/exec") || !url.endsWith("/exec")){
       throw new Error("Falta configurar la URL /exec de Google Apps Script en config.js");
     }
     return url;
