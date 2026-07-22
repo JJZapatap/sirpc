@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SIRPC · Login revisores</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</head>
+<body>
+  <div class="wrap">
+    <header class="topbar">
+      <div class="toprow">
+        <img class="brand-logo" src="assets/logo-ucc.svg" alt="UCC SIRPC">
+        <div class="brand-text">
+          <h1>SIRPC · Panel de revisores</h1>
+          <p>Acceso individual · SIB · APA · Rizoma</p>
+        </div>
+        <div></div>
+      </div>
+      <!-- Acceso directo para revisores. No se publica en el menú de docentes. -->
+    </header>
+
+    <main>
+      <section id="loginBox" class="card">
+        <div class="title">🔐 Ingreso de revisor</div>
+        <p class="subtitle">Ingrese con el usuario y clave asignados. El sistema cargará únicamente las revisiones que le corresponden.</p>
+        <div id="loginMsg"></div>
+        <div class="grid g3">
+          <div>
+            <label>Tipo de revisión</label>
+            <select id="loginTipo"><option>SIB</option><option>APA</option><option>Rizoma</option></select>
+          </div>
+          <div>
+            <label>Usuario</label>
+            <input id="loginUsuario" class="inp" placeholder="Ej: sib, apa o rizoma" autocomplete="username">
+          </div>
+          <div>
+            <label>Clave</label>
+            <input id="loginClave" class="inp" type="password" placeholder="Clave de acceso" autocomplete="current-password">
+          </div>
+        </div>
+        <div class="btnrow mt">
+          <button id="btnLogin" class="btn green">Ingresar al panel</button>
+        </div>
+        <p class="small muted mt">Nota: las claves se administran en la hoja <b>Revisores</b> del Google Sheets.</p>
+      </section>
+
+      <section id="panelBox" class="hidden">
+        <section class="card soft">
+          <div class="panel-head">
+            <div>
+              <div class="title">✅ Gestión de revisión</div>
+              <p id="who" class="subtitle"></p>
+            </div>
+            <button id="btnLogout" class="btn ghost sm">Cerrar sesión</button>
+          </div>
+          <div id="msg"></div>
+          <div class="toolbar reviewer-toolbar">
+            <div><label>Fecha</label><input id="fFecha" class="inp" type="date"></div>
+            <div><label>Estado cita</label><select id="fEstado"><option>RESERVADA</option><option value="">Todos</option><option>ATENDIDA</option><option>CANCELADA</option></select></div>
+            <div><label>Buscar</label><input id="fTexto" class="inp" placeholder="Docente, curso, reserva..."></div>
+            <div style="align-self:end"><button id="btnFiltrar" class="btn sm full">Actualizar</button></div>
+          </div>
+          <div class="notice info">Solo se cargan las revisiones asignadas al revisor autenticado. También se muestra el avance de los otros revisores para el mismo plan.</div>
+          <div class="tablewrap"><table id="tabla"><thead></thead><tbody></tbody></table></div>
+        </section>
+      </section>
+    </main>
+    <footer class="footer">SIRPC · Panel seguro de revisores</footer>
+  </div>
+  <div id="modalRoot"></div>
+<script>
+const {api, notify, escapeHtml, estadoPill} = window.SIRPC;
+let ROWS = [];
+let AUTH = null;
+
+const STORAGE_KEY = "sirpc_revisor_auth_v3";
+const btnLogin = document.getElementById("btnLogin");
+const btnLogout = document.getElementById("btnLogout");
+const btnFiltrar = document.getElementById("btnFiltrar");
+
+btnLogin.onclick = login;
+btnLogout.onclick = logout;
+btnFiltrar.onclick = cargar;
+document.getElementById("fTexto").addEventListener("keydown", e => { if(e.key === "Enter") cargar(); });
+document.getElementById("loginClave").addEventListener("keydown", e => { if(e.key === "Enter") login(); });
+window.addEventListener("load", restaurarSesion);
+
+function getLoginPayload(){
+  return {
+    tipoRevision: document.getElementById("loginTipo").value,
+    usuario: document.getElementById("loginUsuario").value.trim(),
+    clave: document.getElementById("loginClave").value
+  };
+}
+
+async function restaurarSesion(){
+  try{
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    if(!raw) return;
+    const saved = JSON.parse(raw);
+    if(!saved || !saved.usuario || !saved.clave || !saved.tipoRevision) return;
+    document.getElementById("loginTipo").value = saved.tipoRevision;
+    document.getElementById("loginUsuario").value = saved.usuario;
+    document.getElementById("loginClave").value = saved.clave;
+    await login(true);
+  }catch(e){ sessionStorage.removeItem(STORAGE_KEY); }
+}
+
+async function login(silencioso=false){
+  const payload = getLoginPayload();
+  if(!payload.usuario || !payload.clave){ notify("#loginMsg","warn","Ingrese usuario y clave."); return; }
+  btnLogin.disabled = true;
+  btnLogin.textContent = "Validando...";
+  if(!silencioso) notify("#loginMsg","info","Validando acceso del revisor...");
+  try{
+    const resp = await api("loginRevisor", payload);
+    AUTH = {
+      tipoRevision: resp.tipoRevision,
+      revisor: resp.revisor,
+      correo: resp.correo || "",
+      usuario: payload.usuario,
+      clave: payload.clave
+    };
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(AUTH));
+    document.getElementById("loginBox").classList.add("hidden");
+    document.getElementById("panelBox").classList.remove("hidden");
+    document.getElementById("who").innerHTML = `<b>${escapeHtml(AUTH.tipoRevision)}</b> · ${escapeHtml(AUTH.revisor)} · Solo verá sus revisiones asignadas.`;
+    await cargar();
+  }catch(err){
+    sessionStorage.removeItem(STORAGE_KEY);
+    notify("#loginMsg","err",err.message);
+  }finally{
+    btnLogin.disabled = false;
+    btnLogin.textContent = "Ingresar al panel";
+  }
+}
+
+function logout(){
+  AUTH = null;
+  sessionStorage.removeItem(STORAGE_KEY);
+  ROWS = [];
+  document.getElementById("panelBox").classList.add("hidden");
+  document.getElementById("loginBox").classList.remove("hidden");
+  document.getElementById("tabla").querySelector("tbody").innerHTML = "";
+  notify("#loginMsg","info","Sesión cerrada.");
+}
+
+function authPayload(extra={}){
+  return Object.assign({}, extra, {
+    tipoRevision: AUTH.tipoRevision,
+    usuario: AUTH.usuario,
+    clave: AUTH.clave
+  });
+}
+
+async function cargar(){
+  if(!AUTH){ notify("#loginMsg","warn","Primero ingrese como revisor."); return; }
+  notify("#msg","info","Cargando revisiones asignadas...");
+  try{
+    const resp = await api("listarRevisiones", authPayload({
+      fecha: document.getElementById("fFecha").value,
+      estadoCita: document.getElementById("fEstado").value,
+      texto: document.getElementById("fTexto").value
+    }));
+    ROWS = resp.revisiones || [];
+    renderTabla(ROWS);
+    notify("#msg","ok",`Revisiones cargadas para ${escapeHtml(AUTH.tipoRevision)}: ${ROWS.length}`);
+  }catch(err){ notify("#msg","err",err.message); }
+}
+
+function renderTabla(rows){
+  const headers = ["FechaCita","HoraCita","EstadoCita","EstadoRevision","EstadoSIB","EstadoAPA","EstadoRizoma","Nombre_Completo","Descripción","Nº Clase","NumeroReserva"];
+  const own = AUTH ? AUTH.tipoRevision : "Revisión";
+  document.querySelector("#tabla thead").innerHTML = `<tr>${headers.map(h=>`<th>${escapeHtml(labelHeader(h, own))}</th>`).join("")}<th>Acción</th></tr>`;
+  document.querySelector("#tabla tbody").innerHTML = rows.map((r,idx) => `<tr>${headers.map(h => {
+    let v = r[h] || "";
+    if(["EstadoCita","EstadoRevision","EstadoSIB","EstadoAPA","EstadoRizoma"].includes(h)) return `<td>${estadoPill(v || "PENDIENTE")}</td>`;
+    return `<td>${escapeHtml(v)}</td>`;
+  }).join("")}<td>${actionButton(r, idx)}</td></tr>`).join("") || `<tr><td colspan="${headers.length+1}">No hay revisiones asignadas con los filtros seleccionados.</td></tr>`;
+  document.querySelectorAll("[data-row]").forEach(b => b.onclick = () => abrirResultado(Number(b.dataset.row)));
+}
+function labelHeader(h, own){
+  if(h === "EstadoRevision") return `Mi revisión (${own})`;
+  if(h === "EstadoSIB") return "SIB";
+  if(h === "EstadoAPA") return "APA";
+  if(h === "EstadoRizoma") return "Rizoma";
+  return h;
+}
+function actionButton(r, idx){
+  const cita = String(r.EstadoCita || "").toUpperCase();
+  if(cita === "CANCELADA") return `<span class="small muted">Cita cancelada</span>`;
+  return `<button class="btn green sm" data-row="${idx}">Registrar resultado</button>`;
+}
+
+function abrirResultado(index){
+  const r = ROWS[index];
+  if(!r) return;
+  document.getElementById("modalRoot").innerHTML = `<div class="modal-back"><div class="modal">
+    <div class="title">📝 Registrar resultado ${escapeHtml(AUTH.tipoRevision)}</div>
+    <p class="subtitle"><b>${escapeHtml(r.Nombre_Completo)}</b><br>${escapeHtml(r.Descripción)} · Reserva integral ${escapeHtml(r.NumeroReserva)}</p>
+    <div id="resMsg"></div>
+    <div class="grid g2">
+      <div><label>Resultado</label><select id="estadoRevision"><option>VISADO</option><option>CON OBSERVACIONES</option><option>NO ASISTIÓ</option></select></div>
+      <div><label>Revisor autenticado</label><div class="inp readonly">${escapeHtml(AUTH.revisor)}</div></div>
+    </div>
+    <div class="mt"><label>Observaciones</label><textarea id="obs" placeholder="Registre observaciones si aplica"></textarea></div>
+    <div class="notice info mt">
+      Avance del plan: SIB ${plainEstado(r.EstadoSIB)} · APA ${plainEstado(r.EstadoAPA)} · Rizoma ${plainEstado(r.EstadoRizoma)}
+    </div>
+    <div class="btnrow mt"><button id="btnGuardar" class="btn green">Guardar resultado</button><button id="btnCerrar" class="btn ghost">Cerrar</button></div>
+  </div></div>`;
+  const estadoActual = String(r.EstadoRevision || "").toUpperCase();
+  document.getElementById("estadoRevision").value = ["VISADO","CON OBSERVACIONES","NO ASISTIÓ"].includes(estadoActual) ? r.EstadoRevision : "VISADO";
+  document.getElementById("obs").value = r.ObservacionesRevisor || "";
+  document.getElementById("btnCerrar").onclick = cerrar;
+  document.getElementById("btnGuardar").onclick = async () => {
+    const btn = document.getElementById("btnGuardar");
+    btn.disabled = true; btn.textContent = "Guardando...";
+    try{
+      await api("marcarRevision", authPayload({
+        numeroReserva:r.NumeroReserva,
+        estadoRevision:document.getElementById("estadoRevision").value,
+        observaciones:document.getElementById("obs").value,
+        usuarioRevision:AUTH.revisor
+      }));
+      notify("#resMsg","ok","Resultado guardado correctamente.");
+      setTimeout(()=>{ cerrar(); cargar(); }, 700);
+    }catch(err){ notify("#resMsg","err",err.message); btn.disabled = false; btn.textContent = "Guardar resultado"; }
+  };
+}
+function plainEstado(v){ return escapeHtml(String(v || "PENDIENTE").toUpperCase()); }
+function cerrar(){ document.getElementById("modalRoot").innerHTML = ""; }
+</script>
+</body>
+</html>
