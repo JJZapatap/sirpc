@@ -14,12 +14,22 @@
     getApiUrl
   };
 
-  function getApiUrl(){
-    if(!API_URL || API_URL.includes("https://script.google.com/macros/s/AKfycbwmG3lbBWrMrRq8iB1_PxR0QzBFCX5MaqetvtoaTQpoTIQPgXgSkRpsqtNcXxtQACQ/exec")){
-      throw new Error("Falta configurar la URL /exec de Google Apps Script en config.js");
-    }
-    return API_URL;
+function getApiUrl() {
+  const API_URL = window.SIRPC_CONFIG && window.SIRPC_CONFIG.API_URL
+    ? window.SIRPC_CONFIG.API_URL.trim()
+    : "";
+
+  if (
+    !API_URL ||
+    API_URL.includes("PEGUE_AQUI_LA_URL_DE_APPS_SCRIPT") ||
+    API_URL.includes("TU_ID_DE_APPS_SCRIPT") ||
+    !API_URL.endsWith("/exec")
+  ) {
+    throw new Error("Falta configurar la URL /exec de Google Apps Script en config.js");
   }
+
+  return API_URL;
+}
 
   function api(action, payload){
     return new Promise((resolve,reject)=>{
