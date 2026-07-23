@@ -1,0 +1,117 @@
+SIRPC · HOME RUN · INSTALACIÓN PASO A PASO
+================================================
+
+OBJETIVO
+--------
+Sistema web para agendar citas de revisión de planes de curso.
+Frontend: GitHub Pages.
+Base de datos: Google Sheets.
+Backend: Google Apps Script.
+Horarios: configurados en config.js, NO en Google Sheets.
+
+ARCHIVOS INCLUIDOS
+------------------
+1. Plantilla_SIRPC_GoogleSheets.xlsx
+2. Codigo.gs
+3. index.html
+4. citas.html
+5. revision.html
+6. app.js
+7. config.js
+8. style.css
+9. logo-ucc.png
+
+PASO 1 · CREAR EL GOOGLE SHEETS NUEVO
+-------------------------------------
+Sí, se recomienda recrear otro Google Sheet limpio para este proyecto.
+
+1. Descargue Plantilla_SIRPC_GoogleSheets.xlsx.
+2. Súbalo a Google Drive.
+3. Ábralo con Google Sheets.
+4. Verifique que tenga estas hojas:
+   - LEEME
+   - Dashboard
+   - PlanesCurso
+   - Revisiones
+   - Citas
+   - Revisores
+   - Configuracion
+   - RepositorioOriginal
+   - Duplicados
+
+PASO 2 · PEGAR EL BACKEND EN APPS SCRIPT
+----------------------------------------
+1. Dentro del Google Sheets, vaya a Extensiones > Apps Script.
+2. Borre todo el contenido de Código.gs.
+3. Pegue el contenido del archivo Codigo.gs.
+4. Guarde el proyecto.
+
+PASO 3 · IMPLEMENTAR COMO APLICACIÓN WEB
+----------------------------------------
+1. Clic en Implementar > Nueva implementación.
+2. Tipo: Aplicación web.
+3. Ejecutar como: Yo.
+4. Quién tiene acceso: Cualquier usuario.
+5. Autorice permisos.
+6. Copie la URL que termina en /exec.
+
+PASO 4 · CONFIGURAR config.js
+-----------------------------
+1. Abra config.js.
+2. Reemplace:
+   PEGUE_AQUI_LA_URL_EXEC_DE_GOOGLE_APPS_SCRIPT
+   por la URL real /exec de Apps Script.
+3. Edite las fechas disponibles en FECHAS_DISPONIBLES.
+4. Edite horarios si es necesario.
+5. Guarde.
+
+PASO 5 · SUBIR A GITHUB
+-----------------------
+Suba a la raíz del repositorio estos archivos:
+
+- index.html
+- citas.html
+- revision.html
+- app.js
+- config.js
+- style.css
+- logo-ucc.png
+
+PASO 6 · ACTIVAR GITHUB PAGES
+-----------------------------
+1. En el repositorio: Settings > Pages.
+2. Source: Deploy from branch.
+3. Branch: main / root.
+4. Abra la URL generada.
+
+PÁGINAS
+-------
+Docente:
+https://TUUSUARIO.github.io/TUREPO/index.html
+
+Vista administrativa:
+https://TUUSUARIO.github.io/TUREPO/citas.html
+
+Panel de revisores:
+https://TUUSUARIO.github.io/TUREPO/revision.html
+
+VALIDACIONES INCLUIDAS
+----------------------
+- El docente ingresa por documento o correo.
+- Se cargan sus planes de curso activos.
+- Cada plan debe pasar por SIB, APA y Rizoma.
+- No permite duplicar cita activa para el mismo plan y el mismo tipo de revisión.
+- Los cupos se cuentan por fecha + hora + tipo de revisión + jornada.
+- Cada horario admite máximo 4 cupos.
+- Si se cancela, el cupo vuelve a estar disponible.
+- El revisor puede marcar VISADO, CON_OBSERVACIONES o NO_ASISTIO.
+- Cuando SIB, APA y Rizoma están VISADOS, el plan pasa a COMPLETAMENTE_VISADO.
+
+NOTA SOBRE CACHE
+----------------
+Si GitHub sigue mostrando una versión vieja:
+- Presione Ctrl + F5.
+- Cambie el número de versión ?v=20260723-HR01 en los HTML.
+- Verifique directamente:
+  https://TUUSUARIO.github.io/TUREPO/config.js
+

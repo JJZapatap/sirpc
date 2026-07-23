@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SIRPC · Revisión y visado</title>
+  <link rel="stylesheet" href="style.css?v=20260723-HR01">
+</head>
+<body data-page="revision">
+  <main class="wrap">
+    <section class="hero">
+      <img src="logo-ucc.png" alt="UCC" class="logo">
+      <div>
+        <h1>SIRPC · Panel de Revisores</h1>
+        <p>SIB · APA · Rizoma · Registro de visado y observaciones</p>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>✅ Revisión de planes</h2>
+      <div id="msg" class="hidden"></div>
+
+      <div class="toolbar">
+        <div class="field">
+          <label>Tipo de revisión</label>
+          <select id="revTipo">
+            <option value="SIB">SIB · Marisorelis Carrillo Cantillo</option>
+            <option value="APA">APA · Emilio Alfonso Lara</option>
+            <option value="Rizoma">Rizoma · Adriana Milena Jimenez Camacho</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Buscar</label>
+          <input id="revBuscar" type="text" placeholder="Docente, curso, documento...">
+        </div>
+        <button id="btnCargarRevision" class="btn-primary">Cargar citas</button>
+      </div>
+
+      <div id="kpisRevision" class="kpis"></div>
+
+      <div class="table-wrap">
+        <table id="tablaRevision"></table>
+      </div>
+    </section>
+  </main>
+  <footer class="footer">Universidad Cooperativa de Colombia · Campus Santa Marta</footer>
+
+  <script src="config.js?v=20260723-HR01"></script>
+  <script src="app.js?v=20260723-HR01"></script>
+</body>
+</html>

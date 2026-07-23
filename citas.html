@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SIRPC · Citas registradas</title>
+  <link rel="stylesheet" href="style.css?v=20260723-HR01">
+</head>
+<body data-page="citas">
+  <main class="wrap">
+    <section class="hero">
+      <img src="logo-ucc.png" alt="UCC" class="logo">
+      <div>
+        <h1>SIRPC · Citas Registradas</h1>
+        <p>Vista administrativa general de agendamientos</p>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>📋 Gestión de citas</h2>
+      <div id="msg" class="hidden"></div>
+      <div class="toolbar">
+        <div class="field">
+          <label>Buscar</label>
+          <input id="filtroTexto" type="text" placeholder="Docente, documento, curso, reserva...">
+        </div>
+        <div class="field">
+          <label>Tipo de revisión</label>
+          <select id="filtroTipo">
+            <option value="">Todos</option>
+            <option value="SIB">SIB</option>
+            <option value="APA">APA</option>
+            <option value="Rizoma">Rizoma</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Estado cita</label>
+          <select id="filtroEstado">
+            <option value="">Todos</option>
+            <option value="RESERVADA">RESERVADA</option>
+            <option value="CANCELADA">CANCELADA</option>
+            <option value="ATENDIDA">ATENDIDA</option>
+            <option value="NO_ASISTIO">NO ASISTIÓ</option>
+          </select>
+        </div>
+        <button id="btnRecargarCitas" class="btn-primary">Recargar</button>
+        <button id="btnExportarCitas" class="btn-outline">Exportar CSV</button>
+      </div>
+
+      <div id="kpisCitas" class="kpis"></div>
+      <div class="table-wrap">
+        <table id="tablaCitas"></table>
+      </div>
+    </section>
+  </main>
+  <footer class="footer">Universidad Cooperativa de Colombia · Campus Santa Marta</footer>
+
+  <script src="config.js?v=20260723-HR01"></script>
+  <script src="app.js?v=20260723-HR01"></script>
+</body>
+</html>

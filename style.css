@@ -1,0 +1,129 @@
+/* ==========================================================================
+   SIRPC · Revisión de Planes de Curso
+   Universidad Cooperativa de Colombia · Campus Santa Marta
+   ========================================================================== */
+:root{
+  --azul:#123C55;
+  --azul2:#0F5D75;
+  --cyan:#00A5B5;
+  --verde:#6EB52C;
+  --verde2:#80BA27;
+  --fondo:#EEF5F8;
+  --texto:#0B2239;
+  --muted:#5D6B78;
+  --borde:#CFE0EA;
+  --blanco:#fff;
+  --rojo:#C62828;
+  --amarillo:#F39C12;
+  --ok:#198754;
+  --sombra:0 12px 30px rgba(13,48,72,.12);
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:linear-gradient(135deg,#eef5f8,#f8fbfc);
+  color:var(--texto);
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:18px}
+.hero{
+  display:grid;
+  grid-template-columns:90px 1fr;
+  align-items:center;
+  gap:18px;
+  background:linear-gradient(135deg,var(--azul),#136075,var(--verde));
+  border-radius:22px;
+  padding:20px 24px;
+  color:#fff;
+  box-shadow:var(--sombra);
+  margin-bottom:22px;
+}
+.logo{
+  width:70px;height:70px;border-radius:18px;background:#fff;padding:8px;
+  object-fit:contain;box-shadow:0 8px 20px rgba(0,0,0,.18)
+}
+.hero h1{margin:0;font-size:26px;line-height:1.1;font-weight:800}
+.hero p{margin:8px 0 0;font-size:14px;opacity:.94}
+.card{
+  background:#fff;border:1px solid var(--borde);border-radius:20px;
+  box-shadow:var(--sombra);padding:22px;margin-bottom:18px
+}
+.card h2,.card h3{margin:0 0 10px;color:#061B33}
+.help{color:var(--muted);font-size:14px;margin-bottom:16px}
+.row{display:flex;gap:14px;align-items:end;flex-wrap:wrap}
+.field{flex:1;min-width:240px}
+label{display:block;font-size:13px;font-weight:800;margin-bottom:6px;color:#113B58}
+input,select,textarea{
+  width:100%;border:1.6px solid var(--borde);border-radius:14px;padding:13px 14px;
+  font-size:15px;outline:none;background:#fff;color:var(--texto)
+}
+input:focus,select:focus,textarea:focus{
+  border-color:var(--cyan);box-shadow:0 0 0 4px rgba(0,165,181,.12)
+}
+textarea{min-height:90px;resize:vertical}
+button{
+  border:none;border-radius:14px;padding:13px 18px;font-weight:800;cursor:pointer;
+  transition:.15s transform,.15s opacity,.15s background;
+}
+button:hover{transform:translateY(-1px)}
+button:disabled{opacity:.55;cursor:not-allowed;transform:none}
+.btn-primary{background:linear-gradient(135deg,var(--cyan),#117C92);color:#fff}
+.btn-green{background:linear-gradient(135deg,var(--verde),#4F9518);color:#fff}
+.btn-outline{background:#fff;border:2px solid var(--azul2);color:var(--azul)}
+.btn-danger{background:#fff0f0;border:1px solid #f4bbbb;color:var(--rojo)}
+.btn-small{padding:8px 10px;font-size:12px;border-radius:10px}
+.msg{padding:13px 16px;border-radius:16px;margin:12px 0;font-size:14px;line-height:1.45}
+.msg.error{background:#fff1f1;border:1px solid #ffb3b3;color:#a31212}
+.msg.ok{background:#ecfff1;border:1px solid #a7efb8;color:#126d2f}
+.msg.warn{background:#fff8e8;border:1px solid #ffdf8b;color:#8a5a00}
+.msg.info{background:#eef8ff;border:1px solid #b9e3ff;color:#125475}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.plan{
+  border:1px solid var(--borde);border-radius:18px;padding:16px;background:linear-gradient(180deg,#fff,#f8fbfd)
+}
+.plan-title{font-weight:900;font-size:16px;margin-bottom:6px;color:#0c2e48}
+.plan-meta{font-size:12px;color:#607180;line-height:1.5;margin-bottom:12px}
+.rev-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.rev-card{
+  border:1px solid var(--borde);border-radius:16px;padding:12px;background:#fff;
+  display:flex;flex-direction:column;gap:7px;min-height:148px
+}
+.rev-card h4{margin:0;font-size:15px}
+.badge{display:inline-block;border-radius:999px;padding:4px 9px;font-size:11px;font-weight:900}
+.badge.pendiente{background:#f4f6f8;color:#55616b}
+.badge.reservada{background:#e6f7ed;color:#12783d}
+.badge.visado{background:#d8f7df;color:#0b7130}
+.badge.obs{background:#fff1d6;color:#8a5a00}
+.badge.cancelada,.badge.no{background:#ffe6e6;color:#ad1818}
+.revisor{font-size:11px;color:var(--muted);line-height:1.35}
+.scheduler{
+  border:2px solid rgba(0,165,181,.25);border-radius:20px;padding:18px;background:#fbfeff
+}
+.date-grid,.journey-grid,.slots{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:12px 0
+}
+.choice,.slot{
+  border:1.6px solid var(--borde);background:#fff;border-radius:14px;padding:12px;text-align:center;cursor:pointer;font-weight:800
+}
+.choice.sel,.slot.sel{border-color:var(--cyan);box-shadow:0 0 0 4px rgba(0,165,181,.12);background:#eefcff}
+.slot.full{opacity:.45;background:#f8e7e7;color:#9f1b1b;cursor:not-allowed}
+.slot small{display:block;color:var(--muted);font-weight:700;margin-top:3px}
+.table-wrap{overflow:auto;border:1px solid var(--borde);border-radius:16px;background:#fff}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:10px 9px;border-bottom:1px solid #e6eef3;text-align:left;vertical-align:top}
+th{background:#eaf5fa;color:#123C55;position:sticky;top:0;z-index:1}
+tr:hover td{background:#fbfdff}
+.toolbar{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin-bottom:14px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:#fff;border:1px solid var(--borde);border-radius:16px;padding:14px}
+.kpi strong{display:block;font-size:26px;color:var(--azul)}
+.kpi span{font-size:12px;color:var(--muted);font-weight:800}
+.hidden{display:none!important}
+.footer{text-align:center;color:#73808a;font-size:12px;padding:18px}
+@media(max-width:760px){
+  .hero{grid-template-columns:1fr;text-align:center}
+  .logo{margin:0 auto}
+  .rev-grid{grid-template-columns:1fr}
+  .row{display:block}
+  .field{margin-bottom:12px}
+}
