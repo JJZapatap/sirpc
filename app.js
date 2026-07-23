@@ -12,7 +12,7 @@
   const REVISORES = CFG.REVISORES || {
     SIB: "Marisorelis Carrillo Cantillo",
     APA: "Emilio Alfonso Lara",
-    Rizoma: "Adriana Milena Jimenez Camacho"
+    Campus: "Adriana Milena Jimenez Camacho"
   };
   const HORARIOS = CFG.HORARIOS || { manana: [], tarde: [] };
   const FECHAS = CFG.FECHAS_DISPONIBLES || [];
